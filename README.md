@@ -51,7 +51,7 @@ Upstream runs four processes (api, web app, worker, Telegram bot) beside Postgre
 
 1. Wait until every service is green (a few minutes on the first deploy).
 2. Open the Gateway's URL and register. **The first account becomes the instance owner** (god mode), so register right away.
-3. In god mode under **Authentication**, choose who may sign up: open (the default), invite only, or closed.
+3. In god mode under **Authentication**, set who may sign up to **invite only** (or closed). The default is open: anyone who finds the URL can create an account.
 4. Mail for invites, password resets and notifications: god mode, **Integrations, Email provider**. Railway allows outbound SMTP only on the Pro plan, so on Hobby pick **Resend**, which sends over HTTPS, and enter a sender address verified at Resend in **From**.
 5. AI model keys and the Telegram bot token are also set in the app, not in variables.
 
