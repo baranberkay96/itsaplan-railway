@@ -1,0 +1,84 @@
+# Gateway: the one public origin of It's a Plan on Railway.
+#
+#   https://{domain}/api/*                    -> API (the /api prefix is removed)
+#   https://{domain}/.well-known/oauth-*      -> API (OAuth discovery for MCP clients)
+#   https://{domain}/.well-known/openid-*     -> API
+#   https://{domain}/*                        -> Web
+#
+# The services run with APP_URL=https://{domain} and API_URL=https://{domain}/api, the
+# "path on the web's host" layout upstream supports since 1.5.0 (docs/self-hosting.md,
+# "Where the api lives"). Web app and api then share one host, so the session cookie is
+# host-only (with the __Host- prefix) and works on Railway's generated *.up.railway.app
+# domain. Two separate *.up.railway.app hostnames cannot share it: that suffix is on the
+# Public Suffix List, so each hostname is its own site.
+#
+# ITSAPLAN_API_UPSTREAM and ITSAPLAN_WEB_UPSTREAM are service variables
+# (host:port on Railway's private network), read when Caddy starts.
+
+{
+	admin off
+	auto_https off
+}
+
+(proxy_defaults) {
+	# Railway's edge terminates TLS and speaks plain HTTP to this proxy. The browser used
+	# HTTPS, and Next.js reads the scheme from this header.
+	header_up X-Forwarded-Proto https
+	# While the API or Web service restarts, wait up to 10 s for it instead of
+	# answering 502 at once. Caddy retries requests that never reached the service
+	# (and GETs); other requests are never sent twice.
+	lb_try_duration 10s
+	lb_try_interval 500ms
+}
+
+:{$PORT:8080} {
+	# Healthcheck of this proxy alone. Team slugs start with a letter, so no page of
+	# the app lives under /_gateway.
+	handle /_gateway/health {
+		respond "ok" 200
+	}
+
+	# The root of API_URL itself.
+	handle /api {
+		rewrite * /
+		reverse_proxy {$ITSAPLAN_API_UPSTREAM} {
+			import proxy_defaults
+			transport http {
+				# Bun closes idle keep-alive connections after 30 s; drop them first.
+				keepalive 20s
+			}
+		}
+	}
+
+	# REST API, auth handler (/api/api/auth/*), MCP (/api/mcp), SCIM, Git webhooks.
+	handle_path /api/* {
+		reverse_proxy {$ITSAPLAN_API_UPSTREAM} {
+			import proxy_defaults
+			transport http {
+				keepalive 20s
+			}
+		}
+	}
+
+	# An issuer with a path (https://{domain}/api) is discovered at the root of the host
+	# (RFC 8414, RFC 9728), so these documents go to the API with their path unchanged.
+	@oauth_discovery path /.well-known/oauth-authorization-server* /.well-known/oauth-protected-resource* /.well-known/openid-configuration*
+	handle @oauth_discovery {
+		reverse_proxy {$ITSAPLAN_API_UPSTREAM} {
+			import proxy_defaults
+			transport http {
+				keepalive 20s
+			}
+		}
+	}
+
+	handle {
+		reverse_proxy {$ITSAPLAN_WEB_UPSTREAM} {
+			import proxy_defaults
+			transport http {
+				# Node.js closes idle keep-alive connections after 5 s; drop them first.
+				keepalive 4s
+			}
+		}
+	}
+}

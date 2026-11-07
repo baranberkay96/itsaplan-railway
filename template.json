@@ -1,0 +1,481 @@
+{
+ "name": "It's a Plan v1 Issue Tracker with AI Agents (Community)",
+ "description": "Self-hosted Linear alternative where AI agents work issues as teammates.",
+ "category": "Other",
+ "tags": [
+  "itsaplan",
+  "issue-tracker",
+  "project-management",
+  "kanban",
+  "linear-alternative",
+  "ai-agents",
+  "mcp",
+  "self-hosted"
+ ],
+ "image": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/square-kanban.svg",
+ "upstream": {
+  "repo": "croffasia/itsaplan",
+  "version": "v1.10.0 (tag commit 6c7c2fe2cb9d810d29c68e054de25876b47434f8, released 2026-11-05)",
+  "edition": "Community (AGPL-3.0), no licence key",
+  "images": {
+   "api": "ghcr.io/croffasia/itsaplan-api:1.10.0@sha256:9f53d060db6594b2e51bc224183e8e8c60e544a1fd65dcd451c053568c642753 (amd64 sha256:9d5d1dc1da1df6940638251f004336356fa28d73c822d6609268c0135bda8881, created 2026-11-05T00:51Z)",
+   "web": "ghcr.io/croffasia/itsaplan-web:1.10.0@sha256:be213d6861f66ac68320db2a1481c050bc811a740d558f5ebde576b34f78b289 (amd64 sha256:ad767dc21d5e45260a772506821e1e708f00800d027e2247d7e10b629a132aca, created 2026-11-05T00:52Z, Next.js 16.4.2)",
+   "worker": "ghcr.io/croffasia/itsaplan-worker:1.10.0@sha256:840650f1dc8cec4d82cf8cdc6fa5cd43aa82df1fc9a9f9213358e3c33688aed0 (amd64 sha256:703a1279ffbdd1ae97016c2551891a6882198d020ecb37f85c5b96058ec60acd, created 2026-11-05T00:51Z)",
+   "bot": "ghcr.io/croffasia/itsaplan-bot:1.10.0@sha256:d0ab66c7454d003064ea455299db740746f6c6a53edcb375429881c88aad5780 (amd64 sha256:13de32d62c520c22ac3aace764a9de615180cedcfe931d7ce9ce071e28f6f386, created 2026-11-05T00:51Z)",
+   "gateway": "caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee (Caddy v2.11.9, amd64 sha256:fc9cbc100585871d18d4e451cca7021785c90a7006087427ae5ceb3e4efe6424)",
+   "postgres": "ghcr.io/railwayapp-templates/postgres-ssl:18 (Railway base)"
+  },
+  "license": "AGPL-3.0 (packages/runner: Apache-2.0)",
+  "checked": "2026-11-07"
+ },
+ "services": {
+  "Gateway": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/route.svg",
+   "source": {
+    "repo": "baranberkay96/itsaplan-railway",
+    "rootDirectory": "/services/gateway"
+   },
+   "startCommand": null,
+   "preDeployCommand": null,
+   "healthcheckPath": "/_gateway/health",
+   "healthcheckTimeout": 120,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": true,
+   "targetPort": 8080,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "GATEWAY_CADDY_IMAGE": {
+     "defaultValue": "caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee",
+     "description": "Caddy image this service's Docker build starts FROM (passed as a build argument). Pinned by tag and digest.",
+     "required": false
+    },
+    "PORT": {
+     "defaultValue": "8080",
+     "description": "Port Caddy listens on (public domain target; Railway health-checks /_gateway/health here).",
+     "required": false
+    },
+    "APP_URL": {
+     "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+     "description": "Public origin of It's a Plan; API and Web read it from here. After adding a custom domain to this service, set https://{your-domain} and deploy.",
+     "required": false
+    },
+    "API_URL": {
+     "defaultValue": "${{APP_URL}}/api",
+     "description": "Public URL of the api: a path on the same host, routed by this gateway. Keep it as APP_URL plus /api.",
+     "required": false
+    },
+    "ITSAPLAN_API_UPSTREAM": {
+     "defaultValue": "${{API.RAILWAY_PRIVATE_DOMAIN}}:${{API.PORT}}",
+     "description": "API service on the private network (host:port) for /api/* and the OAuth discovery documents.",
+     "required": false
+    },
+    "ITSAPLAN_WEB_UPSTREAM": {
+     "defaultValue": "${{Web.RAILWAY_PRIVATE_DOMAIN}}:${{Web.PORT}}",
+     "description": "Web service on the private network (host:port) for every other path.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "30",
+     "description": "Seconds open requests get to finish when the gateway is redeployed.",
+     "required": false
+    }
+   }
+  },
+  "Web": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/square-kanban.svg",
+   "source": {
+    "image": "ghcr.io/croffasia/itsaplan-web:1.10.0@sha256:be213d6861f66ac68320db2a1481c050bc811a740d558f5ebde576b34f78b289"
+   },
+   "startCommand": null,
+   "preDeployCommand": null,
+   "healthcheckPath": "/login",
+   "healthcheckTimeout": 300,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "PORT": {
+     "defaultValue": "3001",
+     "description": "Port the Next.js server listens on (Railway health-checks /login here; the Gateway proxies to it).",
+     "required": false
+    },
+    "HOSTNAME": {
+     "defaultValue": "0.0.0.0",
+     "description": "Bind address of the Next.js server (upstream default).",
+     "required": false
+    },
+    "NODE_ENV": {
+     "defaultValue": "production",
+     "description": "Runtime mode. Keep production.",
+     "required": false
+    },
+    "API_URL": {
+     "defaultValue": "${{Gateway.API_URL}}",
+     "description": "Public api URL the browser calls, read at startup (set on Gateway).",
+     "required": false
+    },
+    "SERVICE_URL_API": {
+     "defaultValue": "http://${{API.RAILWAY_PRIVATE_DOMAIN}}:${{API.PORT}}",
+     "description": "API on the private network; the web server streams avatars and attachments (/media) from it.",
+     "required": false
+    },
+    "PRIVACY_URL": {
+     "defaultValue": "",
+     "description": "Optional. Privacy policy URL shown on the sign-in screens (Google sign-in needs one). Empty hides the notice.",
+     "required": false
+    },
+    "TERMS_URL": {
+     "defaultValue": "",
+     "description": "Optional. Terms of service URL shown on the sign-in screens. Empty hides the notice.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "15",
+     "description": "Seconds open requests get to finish when Web is redeployed.",
+     "required": false
+    }
+   }
+  },
+  "API": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/server.svg",
+   "source": {
+    "image": "ghcr.io/croffasia/itsaplan-api:1.10.0@sha256:9f53d060db6594b2e51bc224183e8e8c60e544a1fd65dcd451c053568c642753"
+   },
+   "startCommand": "/bin/sh -c 'i=1; until bun run packages/db/src/migrate.ts; do if [ \"$i\" -ge 20 ]; then echo \"[railway] migrations failed 20 times, giving up (see the errors above)\" >&2; exit 1; fi; echo \"[railway] migration attempt $i failed (Postgres still starting?), retrying in 10 s\" >&2; i=$((i+1)); sleep 10; done; exec bun run apps/api/src/index.ts'",
+   "preDeployCommand": null,
+   "healthcheckPath": "/",
+   "healthcheckTimeout": 1200,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": {
+    "mountPath": "/backups"
+   },
+   "variables": {
+    "PORT": {
+     "defaultValue": "3000",
+     "description": "Port Railway health-checks (GET / answers status ok). Must equal API_PORT.",
+     "required": false
+    },
+    "API_PORT": {
+     "defaultValue": "${{PORT}}",
+     "description": "Port the api listens on.",
+     "required": false
+    },
+    "NODE_ENV": {
+     "defaultValue": "production",
+     "description": "Runtime mode. Keep production (secure cookies).",
+     "required": false
+    },
+    "DATABASE_URL": {
+     "defaultValue": "${{Postgres.DATABASE_URL}}",
+     "description": "Postgres connection string (private network).",
+     "required": false
+    },
+    "BETTER_AUTH_SECRET": {
+     "defaultValue": "${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+     "description": "Signs sessions and tokens; generated at deploy. Changing it signs everyone out.",
+     "required": false
+    },
+    "APP_ENCRYPTION_KEY": {
+     "defaultValue": "${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+     "description": "Encrypts stored credentials (AI, mail, Telegram, Git) at rest; generated at deploy. Changing it makes them unreadable.",
+     "required": false
+    },
+    "APP_URL": {
+     "defaultValue": "${{Gateway.APP_URL}}",
+     "description": "Public web origin (CORS, cookies, passkeys, email links). Set on Gateway.",
+     "required": false
+    },
+    "API_URL": {
+     "defaultValue": "${{Gateway.API_URL}}",
+     "description": "Public api URL (auth handler, OAuth issuer, MCP resource, email links). Set on Gateway.",
+     "required": false
+    },
+    "CLIENT_IP_HEADER": {
+     "defaultValue": "x-real-ip",
+     "description": "Header with the client address for the sign-in rate limit; Railway's edge sets X-Real-IP and the Gateway passes it on.",
+     "required": false
+    },
+    "S3_ENDPOINT": {
+     "defaultValue": "${{Bucket.ENDPOINT}}",
+     "description": "Railway Bucket S3 endpoint for attachments.",
+     "required": false
+    },
+    "S3_BUCKET": {
+     "defaultValue": "${{Bucket.BUCKET}}",
+     "description": "Bucket name used by the S3 API.",
+     "required": false
+    },
+    "S3_ACCESS_KEY_ID": {
+     "defaultValue": "${{Bucket.ACCESS_KEY_ID}}",
+     "description": "Bucket access key.",
+     "required": false
+    },
+    "S3_SECRET_ACCESS_KEY": {
+     "defaultValue": "${{Bucket.SECRET_ACCESS_KEY}}",
+     "description": "Bucket secret key.",
+     "required": false
+    },
+    "S3_REGION": {
+     "defaultValue": "${{Bucket.REGION}}",
+     "description": "Bucket region for request signing.",
+     "required": false
+    },
+    "S3_FORCE_PATH_STYLE": {
+     "defaultValue": "false",
+     "description": "false = virtual-hosted URLs, as Railway Buckets use. Set true only for a bucket whose Credentials tab says path-style.",
+     "required": false
+    },
+    "BACKUP_DIR": {
+     "defaultValue": "/backups",
+     "description": "Where the database dump taken before each upgrade's migrations is written (this service's volume).",
+     "required": false
+    },
+    "BACKUP_RETENTION_DAYS": {
+     "defaultValue": "30",
+     "description": "Days a pre-migration dump is kept; older ones are deleted at the next start.",
+     "required": false
+    },
+    "SKIP_PRE_MIGRATION_BACKUP": {
+     "defaultValue": "",
+     "description": "Optional. 1 = apply migrations without the dump (only if you back up Postgres another way).",
+     "required": false
+    },
+    "EMAIL_FROM": {
+     "defaultValue": "",
+     "description": "Optional. Default From address for instance mail; the From field in god mode wins. Resend needs a verified sender.",
+     "required": false
+    },
+    "SSRF_ALLOWED_HOSTS": {
+     "defaultValue": "",
+     "description": "Optional. Comma-separated private hostnames the api and worker may reach (e.g. a self-hosted Git server).",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "30",
+     "description": "Seconds running requests get to finish when the API is redeployed.",
+     "required": false
+    }
+   }
+  },
+  "Worker": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/workflow.svg",
+   "source": {
+    "image": "ghcr.io/croffasia/itsaplan-worker:1.10.0@sha256:840650f1dc8cec4d82cf8cdc6fa5cd43aa82df1fc9a9f9213358e3c33688aed0"
+   },
+   "startCommand": "/bin/sh -c 'bun run packages/db/src/wait-for-migrations.ts || echo \"[railway] could not check the database migrations, starting anyway\" >&2; exec bun run apps/worker/src/index.ts'",
+   "preDeployCommand": null,
+   "healthcheckPath": null,
+   "healthcheckTimeout": null,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "NODE_ENV": {
+     "defaultValue": "production",
+     "description": "Runtime mode. Keep production.",
+     "required": false
+    },
+    "DATABASE_URL": {
+     "defaultValue": "${{Postgres.DATABASE_URL}}",
+     "description": "Postgres connection string (private network).",
+     "required": false
+    },
+    "APP_ENCRYPTION_KEY": {
+     "defaultValue": "${{API.APP_ENCRYPTION_KEY}}",
+     "description": "Same key as the API (decrypts the stored mail and Telegram credentials).",
+     "required": false
+    },
+    "S3_ENDPOINT": {
+     "defaultValue": "${{API.S3_ENDPOINT}}",
+     "description": "Same bucket as the API (imported attachments).",
+     "required": false
+    },
+    "S3_BUCKET": {
+     "defaultValue": "${{API.S3_BUCKET}}",
+     "description": "Same bucket as the API.",
+     "required": false
+    },
+    "S3_ACCESS_KEY_ID": {
+     "defaultValue": "${{API.S3_ACCESS_KEY_ID}}",
+     "description": "Same bucket as the API.",
+     "required": false
+    },
+    "S3_SECRET_ACCESS_KEY": {
+     "defaultValue": "${{API.S3_SECRET_ACCESS_KEY}}",
+     "description": "Same bucket as the API.",
+     "required": false
+    },
+    "S3_REGION": {
+     "defaultValue": "${{API.S3_REGION}}",
+     "description": "Same bucket as the API.",
+     "required": false
+    },
+    "S3_FORCE_PATH_STYLE": {
+     "defaultValue": "${{API.S3_FORCE_PATH_STYLE}}",
+     "description": "Same setting as the API.",
+     "required": false
+    },
+    "EMAIL_FROM": {
+     "defaultValue": "${{API.EMAIL_FROM}}",
+     "description": "Same default From address as the API (notification email).",
+     "required": false
+    },
+    "SSRF_ALLOWED_HOSTS": {
+     "defaultValue": "${{API.SSRF_ALLOWED_HOSTS}}",
+     "description": "Same list as the API (webhook delivery).",
+     "required": false
+    },
+    "TELEMETRY_DISABLED": {
+     "defaultValue": "",
+     "description": "Optional. Upstream sends one anonymous usage snapshot a day (TELEMETRY.md); 1 turns it off.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "30",
+     "description": "Seconds in-flight deliveries get to finish on redeploy.",
+     "required": false
+    }
+   }
+  },
+  "Telegram Bot": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/send.svg",
+   "source": {
+    "image": "ghcr.io/croffasia/itsaplan-bot:1.10.0@sha256:d0ab66c7454d003064ea455299db740746f6c6a53edcb375429881c88aad5780"
+   },
+   "startCommand": "/bin/sh -c 'bun run packages/db/src/wait-for-migrations.ts || echo \"[railway] could not check the database migrations, starting anyway\" >&2; exec bun run apps/bot/src/index.ts'",
+   "preDeployCommand": null,
+   "healthcheckPath": null,
+   "healthcheckTimeout": null,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "NODE_ENV": {
+     "defaultValue": "production",
+     "description": "Runtime mode. Keep production.",
+     "required": false
+    },
+    "DATABASE_URL": {
+     "defaultValue": "${{Postgres.DATABASE_URL}}",
+     "description": "Postgres connection string (private network).",
+     "required": false
+    },
+    "APP_ENCRYPTION_KEY": {
+     "defaultValue": "${{API.APP_ENCRYPTION_KEY}}",
+     "description": "Same key as the API (decrypts the bot token set in god mode).",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "10",
+     "description": "Seconds the bot gets to end its Telegram long poll on redeploy.",
+     "required": false
+    }
+   }
+  },
+  "Postgres": {
+   "icon": "https://devicons.railway.app/i/postgresql.svg",
+   "source": {
+    "image": "ghcr.io/railwayapp-templates/postgres-ssl:18"
+   },
+   "startCommand": null,
+   "preDeployCommand": null,
+   "healthcheckPath": null,
+   "healthcheckTimeout": null,
+   "restartPolicyType": "ON_FAILURE",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": {
+    "mountPath": "/var/lib/postgresql/data"
+   },
+   "variables": {
+    "PGDATA": {
+     "defaultValue": "/var/lib/postgresql/data/pgdata",
+     "description": "Data directory inside the volume (Railway base layout).",
+     "required": true
+    },
+    "PGHOST": {
+     "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+     "description": "Private hostname of this database, used by the Data panel.",
+     "required": true
+    },
+    "PGPORT": {
+     "defaultValue": "5432",
+     "description": "Postgres port.",
+     "required": true
+    },
+    "PGUSER": {
+     "defaultValue": "${{POSTGRES_USER}}",
+     "description": "User for the Data panel and the other services.",
+     "required": true
+    },
+    "PGPASSWORD": {
+     "defaultValue": "${{POSTGRES_PASSWORD}}",
+     "description": "Password for the Data panel and the other services.",
+     "required": true
+    },
+    "PGDATABASE": {
+     "defaultValue": "${{POSTGRES_DB}}",
+     "description": "Database for the Data panel and the other services.",
+     "required": true
+    },
+    "POSTGRES_USER": {
+     "defaultValue": "postgres",
+     "description": "Superuser created on first boot.",
+     "required": true
+    },
+    "POSTGRES_PASSWORD": {
+     "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+     "description": "Superuser password, generated at deploy (letters only, safe in URLs). Changing it later needs ALTER USER too.",
+     "required": true
+    },
+    "POSTGRES_DB": {
+     "defaultValue": "railway",
+     "description": "Database created on first boot; It's a Plan keeps all its tables here.",
+     "required": true
+    },
+    "DATABASE_URL": {
+     "defaultValue": "postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}",
+     "description": "Private connection string used by API, Worker and Telegram Bot.",
+     "required": true
+    },
+    "SSL_CERT_DAYS": {
+     "defaultValue": "820",
+     "description": "Validity of the self-signed TLS certificate.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "60",
+     "description": "Time Postgres gets to shut down cleanly on redeploy.",
+     "required": true
+    }
+   },
+   "restartPolicyMaxRetries": 10
+  }
+ },
+ "buckets": [
+  "Bucket"
+ ]
+}
